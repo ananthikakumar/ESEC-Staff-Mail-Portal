@@ -1,0 +1,287 @@
+{
+  "name": "mail portal",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "68a90837-cd3c-477e-9f81-9ee347737529",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        16
+      ],
+      "id": "ae6cedec-8d4d-409e-8c90-c03554f8405e",
+      "name": "Webhook",
+      "webhookId": "68a90837-cd3c-477e-9f81-9ee347737529"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14M-HaufEnzu7gla_j9Jwa8X93vQoa7FCfwzvi6iL0f0/edit?gid=115340848#gid=115340848",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14M-HaufEnzu7gla_j9Jwa8X93vQoa7FCfwzvi6iL0f0/edit?gid=115340848#gid=115340848",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -64,
+        -16
+      ],
+      "id": "459addea-3afa-4189-9ef4-825b34a72444",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6x7FDINGnetVodOB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json[\"Mail ID\"]}}",
+        "subject": "notes",
+        "message": "=<p>Dear Student,</p>\n\n\n\n<p><strong>Subject:</strong> {{$items(\"Webhook\")[0].json.body.subject}}</p>\n\n<p><strong>Tags:</strong> {{$items(\"Webhook\")[0].json.body.tags}}</p>\n\n<p><strong>Message:</strong><br>\n{{$items(\"Webhook\")[0].json.body.message}}\n</p>\n\n<p><strong>Attachment:</strong> {{$items(\"Webhook\")[0].binary.file.fileName}}</p>\n\n<p>Please download the attached file and review it before the next class.</p>\n\n<p>\nRegards,<br>\nFaculty<br>\nErode Sengunthar Engineering College\n</p>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "file"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        -16
+      ],
+      "id": "7c147a01-d314-40cd-996a-9bc404e767f9",
+      "name": "Send a message",
+      "webhookId": "b3113725-a378-4ace-8041-ab768c6c3e5d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aY9H8CRj6PY3Zt6q",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Notes sent successfully\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        -16
+      ],
+      "id": "5ae63bb3-6d42-48c8-9147-b7bfaed2dbc6",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookItem = $('Webhook').first();\nconst form = webhookItem.json.body;\n\nconst output = [];\n\nfor (const item of $input.all()) {\n\n  const row = item.json;\n\n  const department = (row.Department || \"\").trim().toLowerCase();\n  const year = (row.Year || \"\").trim();\n  const section = (row.Section || \"\").trim().toUpperCase();\n\n  const formDepartment = (form.department || \"\").trim().toLowerCase();\n  const formYear = (form.year || \"\").trim();\n  const formSection = (form.section || \"\").trim().toUpperCase();\n\n  if (\n    department === formDepartment &&\n    year === formYear &&\n    section === formSection\n  ) {\n    output.push({\n      json: row,\n      binary: webhookItem.binary\n    });\n  }\n}\n\n// If no matching rows are found\nif (output.length === 0) {\n  return [\n    {\n      json: {\n        success: false,\n        message: \"No matching students found.\"\n      }\n    }\n  ];\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "5609ef5a-a99d-4315-988d-52acd0783b75",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1nGr3h26p3l-HF832oWaD1X9oM-AJI2jkX8g-Mw7YILU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1nGr3h26p3l-HF832oWaD1X9oM-AJI2jkX8g-Mw7YILU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{$now}}",
+            "Department": "={{$json.body.department}}",
+            "Year": "={{$json.body.year}}",
+            "Section": "={{$json.body.section}}",
+            "Subject": "={{$json.body.subject}}",
+            "Document Name": "={{$json.body.documentName}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Year",
+              "displayName": "Year",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Section",
+              "displayName": "Section",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Document Name",
+              "displayName": "Document Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        224
+      ],
+      "id": "486145df-d5c6-41b3-a56a-675df5d6ba8f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6x7FDINGnetVodOB",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "514adf1d-3ce1-49f0-a07b-0e2c498ccd25",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ac359cec8d8cd1695eec1c133ee3d7ee11e49654899f0e781e4ae9b494c226a8"
+  },
+  "nodeGroups": [],
+  "id": "RKvD953mcZgsZeAL",
+  "tags": []
+}
